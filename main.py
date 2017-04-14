@@ -17,8 +17,8 @@ ANSWER_KEY3 = {0:1,1:1,2:3,3:2,4:1,5:2,6:1,7:2,8:2,9:0,10:1,11:1,12:2,13:2,14:1}
 
 ####################################################################33
 
-directory = "/home/mahmoud/PycharmProjects/untitled1/test/"
-directory1 = "/home/mahmoud/PycharmProjects/untitled1/images/"
+directory = "test/"
+directory1 = "images/"
 
 kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5))
 
@@ -163,12 +163,12 @@ def correct_this_page(p1,n):
 ############################################################################
 
 #############################  Main  ###############################
-f = open("reuslt","w")
+f = open("reuslt.csv","w")
 read_name_of_file = open("test.csv","r")
 for filename in read_name_of_file:
    if 1 == 1:
-       # if count_to_try >4:
-       #     break
+       if count_to_try >4:
+           break
        name = str(directory+filename)
        name = name.replace("\n", "")
        name = name.replace("\r", "")
@@ -182,11 +182,11 @@ for filename in read_name_of_file:
        correct3 , p3 = correct_this_page(p3,3)
        data = filename.replace("\n","").replace("\r","") +","+ str((correct1+correct2+correct3))
        f.write(data+"\n")
-       #count_to_try += 10
+       count_to_try += 10
        # cv2.imshow("f",p1)
-       cv2.imwrite(directory1 + "1"+filename, p1)
-       cv2.imwrite(directory1 + "2"+filename, p2)
-       cv2.imwrite(directory1 + "3"+ filename,p3)
+       # cv2.imwrite(directory1 + "1"+filename, p1)
+       # cv2.imwrite(directory1 + "2"+filename, p2)
+       # cv2.imwrite(directory1 + "3"+ filename,p3)
 
        continue
    else:
