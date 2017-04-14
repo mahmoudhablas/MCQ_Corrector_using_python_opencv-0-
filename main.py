@@ -1,5 +1,5 @@
-################################################## try ########################################################
-from imutils.perspective import four_point_transform
+############################## MCQ Corrector ##################################
+
 from imutils import contours
 import cv2
 import imutils
@@ -132,9 +132,7 @@ def correct_this_page(p1,n):
     circles = np.round(circles[0, :]).astype("int")
 
     sorted_questions = modify_this_list(circles)
-    # for t in sorted_questions:
-    #     for kl in t:
-    #         cv2.circle(p1, (kl[0], kl[1]), kl[2], (0, 0, 255), -1)
+
 
     correct = 0
     number_of_question = 0
@@ -166,32 +164,19 @@ def correct_this_page(p1,n):
 f = open("reuslt.csv","w")
 read_name_of_file = open("test.csv","r")
 for filename in read_name_of_file:
-   if 1 == 1:
-       if count_to_try >4:
-           break
-       name = str(directory+filename)
-       name = name.replace("\n", "")
-       name = name.replace("\r", "")
-       image = cv2.imread(name)
-       image = rotate_crop_image(image)
-       p1 = image[:,0:350]
-       p2 = image[:,380:680]
-       p3 = image[:,720:]
-       correct1, p1 = correct_this_page(p1, 1)
-       correct2, p2 = correct_this_page(p2, 2)
-       correct3 , p3 = correct_this_page(p3,3)
-       data = filename.replace("\n","").replace("\r","") +","+ str((correct1+correct2+correct3))
-       f.write(data+"\n")
-       count_to_try += 10
-       # cv2.imshow("f",p1)
-       # cv2.imwrite(directory1 + "1"+filename, p1)
-       # cv2.imwrite(directory1 + "2"+filename, p2)
-       # cv2.imwrite(directory1 + "3"+ filename,p3)
-
-       continue
-   else:
-       continue
-
+    name = str(directory + filename)
+    name = name.replace("\n", "")
+    name = name.replace("\r", "")
+    image = cv2.imread(name)
+    image = rotate_crop_image(image)
+    p1 = image[:, 0:350]
+    p2 = image[:, 380:680]
+    p3 = image[:, 720:]
+    correct1, p1 = correct_this_page(p1, 1)
+    correct2, p2 = correct_this_page(p2, 2)
+    correct3, p3 = correct_this_page(p3, 3)
+    data = filename.replace("\n", "").replace("\r", "") + "," + str((correct1 + correct2 + correct3))
+    f.write(data + "\n")
 
 
 cv2.waitKey(0)
