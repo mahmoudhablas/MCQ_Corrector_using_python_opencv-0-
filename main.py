@@ -137,8 +137,9 @@ def correct_this_page(p1,n):
     correct = 0
     number_of_question = 0
     for q in sorted_questions:
-        bubbled = None
+        bubbled = (150,5)
         number_of_circle = 0
+        count = 0
         for c in q:
             mask = np.zeros(thresh.shape, dtype="uint8")
 
@@ -146,12 +147,13 @@ def correct_this_page(p1,n):
 
             mask = cv2.bitwise_and(thresh, thresh, mask=mask)
             total = cv2.countNonZero(mask)
-            if bubbled is None or total > bubbled[0]:
+            if  total > bubbled[0]:
                 bubbled = (total, number_of_circle)
+                count += 1
             number_of_circle += 1
         color = (0, 0, 255)
         k = ANSWER_KEY[number_of_question]
-        if k == bubbled[1]:
+        if k == bubbled[1] and count == 1:
             color = (0, 255, 0)
             correct += 1
 
