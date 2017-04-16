@@ -1,10 +1,7 @@
-############################## MCQ Corrector ##################################
-
 from imutils import contours
 import cv2
 import imutils
-import os
-from math import atan2, degrees, pi
+from math import atan2, degrees
 import numpy as np
 
 
@@ -15,17 +12,18 @@ ANSWER_KEY1 = {0: 1, 1: 2, 2: 0, 3: 0, 4: 3,5:0,6:2,7:2,8:0,9:2,10:0,11:1,12:2,1
 ANSWER_KEY2 = {0:0,1:3,2:1,3:2,4:1,5:3,6:2,7:3,8:1,9:3,10:2,11:3,12:3,13:1,14:2}
 ANSWER_KEY3 = {0:1,1:1,2:3,3:2,4:1,5:2,6:1,7:2,8:2,9:0,10:1,11:1,12:2,13:2,14:1}
 
-####################################################################33
+####################################################################
 
-directory = "test/"
-directory1 = "images/"
+directory = "train/"
+
+#################################################################
 
 kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5))
 
-count_to_try = 0
-######################   rotate and crop questions part   ###############################
+#################### Get the last two circles ##################
 
-def rotate_crop_image(image):
+def Get_last_two_circles(image):
+
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     blurred = cv2.GaussianBlur(gray, (5, 5), 0)
     edged = cv2.Canny(blurred, 75, 200)
@@ -49,15 +47,26 @@ def rotate_crop_image(image):
         # have an aspect ratio approximately equal to 1
         if w >= 20 and h >= 20 and ar >= 0.9 and ar <= 1.1:
             circles.append(c)
+
     circles = contours.sort_contours(circles, method="top-to-bottom")[0]
     v = [circles[len(circles) - 1], circles[len(circles) - 2]]
     cv2.drawContours(image, v, -1, 255, -1)
+    # cv2.imwrite("fff.png",image)
     M = cv2.moments(v[0])
     M1 = cv2.moments(v[1])
     cX = int(M["m10"] / M["m00"])
     cY = int(M["m01"] / M["m00"])
     cX2 = int(M1["m10"] / M1["m00"])
     cY2 = int(M1["m01"] / M1["m00"])
+
+    return cX,cX2,cY,cY2
+
+##################################################################
+
+###############################################################
+
+def rotate_image(cX,cX2,cY,cY2,image):
+
     if cX < cX2:
         delta_x, delta_y = cX2 - cX, cY2 - cY
     else:
@@ -65,14 +74,12 @@ def rotate_crop_image(image):
 
     rads = atan2(delta_y, delta_x)
     angle = degrees(rads)
-    image = imutils.rotate(image, angle)
-    image = image[cY2 - 770:cY2 - 80, 90:1100]
+    if angle > -3 and angle < 3:
+        image = imutils.rotate(image, angle)
     return image
 
-##########################################################################
+############################ modify the list of circles  ###########################
 
-
-############################ modify the list of circles  ##################################
 
 def modify_this_list(circles):
 
@@ -109,13 +116,27 @@ def modify_this_list(circles):
     if len(sorted_questions) > 15:
         sorted_questions = sorted_questions[:15]
 
+    if len(sorted_questions) < 15:
+        index = 0
+        for x in range(1,len(sorted_questions),1):
+            if abs(sorted_questions[x][0][1] - sorted_questions[x-1][0][1]) > 50:
+                y = sorted_questions[x-1][0][1] + 42
+                new_q = [np.array([min_x, y, r]), np.array([min_x + 41, y, r])
+                    , np.array([min_x + 82, y, r]), np.array([min_x + 123, y, r])]
+                index = x
+                break
+
+        sorted_questions.insert(index,new_q)
     return sorted_questions
 
-##################################################################################
+#########################################################################
+
+
 
 ###########################  correct  ###################################
 
 def correct_this_page(p1,n):
+
     ANSWER_KEY ={}
     if n == 1:
         ANSWER_KEY = ANSWER_KEY1
@@ -127,18 +148,19 @@ def correct_this_page(p1,n):
     blurred = cv2.GaussianBlur(gray, (5, 5), 0)
     thresh = cv2.threshold(gray, 0, 255,
                            cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1]
+    thresh =  cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
     circles = cv2.HoughCircles(blurred, cv2.HOUGH_GRADIENT, 1, 20,
                                param1=100, param2=30, minRadius=10, maxRadius=50)
     circles = np.round(circles[0, :]).astype("int")
 
     sorted_questions = modify_this_list(circles)
-
-
     correct = 0
     number_of_question = 0
     for q in sorted_questions:
-        bubbled = None
+        bubbled = (130,5)
         number_of_circle = 0
+        list_of_bubbled = []
+        count = 0
         for c in q:
             mask = np.zeros(thresh.shape, dtype="uint8")
 
@@ -146,29 +168,53 @@ def correct_this_page(p1,n):
 
             mask = cv2.bitwise_and(thresh, thresh, mask=mask)
             total = cv2.countNonZero(mask)
-            if bubbled is None or total > bubbled[0]:
+            # if number_of_question==13:
+            #     print total
+            if  total >= bubbled[0] or abs(bubbled[0] - total) < 20:
                 bubbled = (total, number_of_circle)
+                list_of_bubbled.append(bubbled)
+                count = 1
             number_of_circle += 1
+        if len(list_of_bubbled) > 1:
+            max_of_total = max(list_of_bubbled)
+            index = list_of_bubbled.index(max(list_of_bubbled))
+            del list_of_bubbled[index]
+
+            for ii in list_of_bubbled:
+                if abs(ii[0] - max_of_total[0]) < 50:
+                    count += 1
         color = (0, 0, 255)
         k = ANSWER_KEY[number_of_question]
-        if k == bubbled[1]:
+        if k == bubbled[1] and count == 1:
             color = (0, 255, 0)
             correct += 1
 
         cv2.circle(p1, (q[k][0], q[k][1]), q[k][2], color,4)
         number_of_question += 1
+
     return correct,p1
-############################################################################
+
+####################################################################
+
 
 #############################  Main  ###############################
-f = open("reuslt.csv","w")
-read_name_of_file = open("test.csv","r")
+
+f = open("reuslt2.csv","w")
+f.write("FileName,Mark"+"\n")
+read_name_of_file = open("train.csv","r")
 for filename in read_name_of_file:
+
+    filename= filename.split(",")
+    filename = filename[0]
     name = str(directory + filename)
     name = name.replace("\n", "")
     name = name.replace("\r", "")
     image = cv2.imread(name)
-    image = rotate_crop_image(image)
+
+    cX, cX2, cY, cY2 = Get_last_two_circles(image)
+    image = rotate_image(cX,cX2,cY,cY2,image)
+    image = image[cY2 - 770:cY2 - 80, 90:1100]
+
     p1 = image[:, 0:350]
     p2 = image[:, 380:680]
     p3 = image[:, 720:]
@@ -177,8 +223,6 @@ for filename in read_name_of_file:
     correct3, p3 = correct_this_page(p3, 3)
     data = filename.replace("\n", "").replace("\r", "") + "," + str((correct1 + correct2 + correct3))
     f.write(data + "\n")
-
-
 cv2.waitKey(0)
 cv2.destroyAllWindows()
 
