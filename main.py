@@ -157,9 +157,14 @@ def correct_this_page(p1,n):
     correct = 0
     number_of_question = 0
     for q in sorted_questions:
+<<<<<<< HEAD
         bubbled = (130,5)
         number_of_circle = 0
         list_of_bubbled = []
+=======
+        bubbled = (150,5)
+        number_of_circle = 0
+>>>>>>> 5ce50783a9dfe8951c20b5065f16221a3661c824
         count = 0
         for c in q:
             mask = np.zeros(thresh.shape, dtype="uint8")
@@ -168,12 +173,18 @@ def correct_this_page(p1,n):
 
             mask = cv2.bitwise_and(thresh, thresh, mask=mask)
             total = cv2.countNonZero(mask)
+<<<<<<< HEAD
             # if number_of_question==13:
             #     print total
             if  total >= bubbled[0] or abs(bubbled[0] - total) < 20:
                 bubbled = (total, number_of_circle)
                 list_of_bubbled.append(bubbled)
                 count = 1
+=======
+            if  total > bubbled[0]:
+                bubbled = (total, number_of_circle)
+                count += 1
+>>>>>>> 5ce50783a9dfe8951c20b5065f16221a3661c824
             number_of_circle += 1
         if len(list_of_bubbled) > 1:
             max_of_total = max(list_of_bubbled)
