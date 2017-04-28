@@ -14,7 +14,7 @@ ANSWER_KEY3 = {0:1,1:1,2:3,3:2,4:1,5:2,6:1,7:2,8:2,9:0,10:1,11:1,12:2,13:2,14:1}
 offset = 1500
 ####################################################################
 
-directory = "train/"
+directory = "test/"
 
 #################################################################
 
@@ -161,14 +161,12 @@ def correct_this_page(p1,n):
     circles = np.round(circles[0, :]).astype("int")
 
     sorted_questions = modify_this_list(circles,n)
-    for o in sorted_questions:
-        for c in o:
-            cv2.circle(p1, (c[0], c[1]), c[2], (255, 0, 255), -1)
 
     correct = 0
     number_of_question = 0
     for q in sorted_questions:
         bubbled = (110,5)
+        check = False
         number_of_circle = 0
         list_of_bubbled = []
         count = 0
@@ -179,8 +177,9 @@ def correct_this_page(p1,n):
 
             mask = cv2.bitwise_and(thresh, thresh, mask=mask)
             total = cv2.countNonZero(mask)
-            if  total >= bubbled[0] or abs(bubbled[0] - total) < 20:
+            if  total > bubbled[0] or ( abs(bubbled[0] - total) < 20 and check ):
                 bubbled = (total, number_of_circle)
+                check = True
                 list_of_bubbled.append(bubbled)
                 count = 1
             number_of_circle += 1
@@ -208,9 +207,9 @@ def correct_this_page(p1,n):
 
 #############################  Main  ###############################
 directory1 = "images/"
-f = open("reuslt.csv","w")
+f = open("output.csv","w")
 f.write("FileName,Mark"+"\n")
-read_name_of_file = open("train.csv","r")
+read_name_of_file = open("test.csv","r")
 
 for filename in read_name_of_file:
 
