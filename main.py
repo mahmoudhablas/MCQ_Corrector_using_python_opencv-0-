@@ -20,7 +20,18 @@ directory = "train/"
 
 kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5))
 
-#################################################################
+###############################################################
+def preict(sorted_questions,min_x):
+    for q in range(0,len(sorted_questions),1):
+        o = sorted_questions[q]
+        if len(o) != 4:
+            y = o[0][1]
+            r = o[0][2]
+            new_q = [np.array([min_x,y,r]),np.array([min_x+41,y,r])
+                ,np.array([min_x+82,y,r]),np.array([min_x+123,y,r])]
+            sorted_questions[q] = new_q
+    return sorted_questions
+
 #############################################################
 def gtc(p1):
 
@@ -84,32 +95,37 @@ def modify_this_list(circles,n):
     for o in questions:
         w = sorted(o, key=lambda tup: tup[0])
         sorted_questions.append(w)
+
     if len(sorted_questions) > 15:
         if n == 3:
             sorted_questions = sorted_questions[:15]
         elif n == 1:
             sorted_questions.pop(0)
-    min_x = sorted_questions[0][0][0]
 
+    min_x = sorted_questions[0][0][0]
     for j in sorted_questions:
         if min_x > j[0][0]:
             min_x = j[0][0]
+    tempsorted = sorted_questions[:]
 
-    for q in range(0,len(sorted_questions),1):
-        o = sorted_questions[q]
-        if len(o) != 4:
-            y = o[0][1]
-            r = o[0][2]
-            new_q = [np.array([min_x,y,r]),np.array([min_x+41,y,r])
-                ,np.array([min_x+82,y,r]),np.array([min_x+123,y,r])]
+    sorted_questions = preict(sorted_questions,min_x)
 
-            sorted_questions[q] = new_q
+    count = 0
+    for j in sorted_questions:
+        if abs(min_x - j[0][0]) > 20:
+            min_x2 = j[0][0]
+            count += 1
+
+    if count > 6:
+        min_x = min_x2
+        sorted_questions = preict(tempsorted, min_x)
 
     if len(sorted_questions) < 15:
         index = 0
         for x in range(1,len(sorted_questions),1):
             if abs(sorted_questions[x][0][1] - sorted_questions[x-1][0][1]) > 50:
                 y = sorted_questions[x-1][0][1] + 42
+                r = sorted_questions[x-1][0][2]
                 new_q = [np.array([min_x, y, r]), np.array([min_x + 41, y, r])
                     , np.array([min_x + 82, y, r]), np.array([min_x + 123, y, r])]
                 index = x
@@ -145,6 +161,10 @@ def correct_this_page(p1,n):
     circles = np.round(circles[0, :]).astype("int")
 
     sorted_questions = modify_this_list(circles,n)
+    for o in sorted_questions:
+        for c in o:
+            cv2.circle(p1, (c[0], c[1]), c[2], (255, 0, 255), -1)
+
     correct = 0
     number_of_question = 0
     for q in sorted_questions:
@@ -188,7 +208,7 @@ def correct_this_page(p1,n):
 
 #############################  Main  ###############################
 directory1 = "images/"
-f = open("reuslt2.csv","w")
+f = open("reuslt.csv","w")
 f.write("FileName,Mark"+"\n")
 read_name_of_file = open("train.csv","r")
 
@@ -210,7 +230,6 @@ for filename in read_name_of_file:
     correct3, p3 = correct_this_page(p3, 3)
     data = filename.replace("\n", "").replace("\r", "") + "," + str((correct1 + correct2 + correct3))
     f.write(data + "\n")
-
 cv2.waitKey(0)
 cv2.destroyAllWindows()
 
